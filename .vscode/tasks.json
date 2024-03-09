@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Debug",
+            "command": "make debug",
+            "type": "shell",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Build Release",
+            "command": "make",
+            "type": "shell",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
