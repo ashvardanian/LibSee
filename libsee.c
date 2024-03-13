@@ -491,18 +491,17 @@ void reopen_stdout(void) {
     // We'll assume "/dev/tty" corresponds to file path with FD 5 just for this illustration.
     // Typically, opening a file would require a path, which complicates direct syscalls,
     // because syscalls don't handle C strings directly. However, here's a conceptual approach.
-    char const path_to_dev_tty[] = "/dev/tty"; // This is your string.
+    char const path_to_dev_tty[] = "/dev/tty";
 
 #ifdef __aarch64__
-    // For AArch64, the open syscall is number 56 and "/dev/tty" could be preloaded to a suitable memory location.
-    // Actual implementation would need to properly address string handling and syscall details.
-    asm volatile("mov x0, %1\n" // Pointer to the file path ("/dev/tty")
-                 "mov x1, %2\n" // Flags (O_WRONLY=1)
-                 "mov x2, %3\n" // Mode (irrelevant for stdout, typically 0)
-                 "mov x8, 56\n" // Syscall number for 'open' in AArch64
-                 "svc #0\n"
-                 "mov %0, x0"
-                 : "=r"(ret)                            // Output: File descriptor (or error)
+    // For AArch64, the 'open' syscall is number 56.
+    asm volatile("mov x0, %1\n"  // Pointer to the file path ("/dev/tty")
+                 "mov w1, %w2\n" // Flags (O_WRONLY=1), use 'w1' to specify a 32-bit register explicitly if needed
+                 "mov w2, %w3\n" // Mode (irrelevant for stdout, typically 0), again 'w2' for 32-bit
+                 "mov x8, 56\n"  // Syscall number for 'open' in AArch64
+                 "svc #0\n"      // Make the system call
+                 "mov %0, x0"    // Output: File descriptor (or error)
+                 : "=r"(ret)     // Output: File descriptor (or error)
                  : "r"(path_to_dev_tty), "r"(1), "r"(0) // Inputs
                  : "x0", "x1", "x2", "x8", "memory");   // Clobbered registers
 #elif defined(__x86_64__)
@@ -948,6 +947,8 @@ libsee_export int fprintf(FILE *stream, char const *format, ...) {
     return result;
 }
 
+#undef sprintf  // For MacOS
+#undef vsprintf // For MacOS
 libsee_export int sprintf(char *str, char const *format, ...) {
     int result;
     va_list args;
@@ -957,6 +958,8 @@ libsee_export int sprintf(char *str, char const *format, ...) {
     return result;
 }
 
+#undef snprintf  // For MacOS
+#undef vsnprintf // For MacOS
 libsee_export int snprintf(char *str, size_t size, char const *format, ...) {
     int result;
     va_list args;

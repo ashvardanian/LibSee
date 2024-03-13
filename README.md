@@ -38,6 +38,7 @@ There are several things worth knowing, that came handy implementing this.
 - One way to implement this library would be to override the `_start` symbols, but implementing correct loading sequence for a binary is tricky, so I use conventional `dlsym` to lookup the symbols on first function invocation.
 - On `x86_64` architecture, the `rdtscp` instruction yields both the CPU cycle and also the unique identifier of the core. Very handy if you are profiling a multi-threaded application.
 - Once the unloading sequence reaches `libsee.so`, the `STDOUT` is already closed. So if you want to print to the console, you may want to reopen the `/dev/tty` device before printing usage stats.
+- On MacOS the `sprintf`, `vsprintf`, `snprintf`, `vsnprintf` are macros. You have to `#undef` them.
 
 ## Coverage
 

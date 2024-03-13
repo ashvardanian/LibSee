@@ -15,12 +15,12 @@ make
 Want to try it out? Here's how to use it:
 
 ```bash
-LD_PRELOAD=/home/ubuntu/LibSeeProfiler/libsee.so ls
+LD_PRELOAD="$(pwd)/libsee.so" ls        # On Linux
+LD_PRELOAD="$(pwd)/libsee.dylib" ls     # On MacOS
 ```
 
 Debugging:
 
 ```bash
-make debug && gdb --args env LD_PRELOAD=/home/ubuntu/LibSeeProfiler/libsee.so ls
-
+make clean && make debug && gdb --args env LD_PRELOAD=$(pwd)/libsee.so ls
 ```
