@@ -37,7 +37,7 @@
  *  and then again, once the function has returned. Only used for educational purposes.
  */
 #if !defined(LIBSEE_LOG_EVERYTHING)
-#define LIBSEE_LOG_EVERYTHING 1
+#define LIBSEE_LOG_EVERYTHING 0
 #endif
 
 /*
@@ -1137,19 +1137,9 @@ libsee_export void *bsearch_s(void const *key, void const *base, rsize_t count, 
 
 typedef struct libsee_name_stats {
     char const *function_name;
-    size_t average_cpu_cycles;
-    size_t total_cpu_cycles;
+    size_t total_cycles;
     size_t total_calls;
 } libsee_name_stats;
-
-int compare_libsee_name_stats(void const *a, void const *b) {
-    struct libsee_name_stats const *counter_a = (struct libsee_name_stats const *)a;
-    struct libsee_name_stats const *counter_b = (struct libsee_name_stats const *)b;
-    // Descending order sort
-    // if (counter_b->cpu_cycles > counter_a->cpu_cycles) return 1;
-    // if (counter_b->cpu_cycles < counter_a->cpu_cycles) return -1;
-    return 0;
-}
 
 void libsee_initialize(void) {
 
@@ -1268,16 +1258,21 @@ void libsee_initialize(void) {
 
 void libsee_finalize(void) {
     reopen_stdout();
+
+#if LIBSEE_LOG_EVERYTHING
     syscall_print("Finalizing\n", 11);
+#endif
+
     // Aggregate stats from all threads into the first one.
-    size_t total_cycles = 0;
     size_t counters_per_thread = sizeof(thread_local_counters) / sizeof(size_t);
     for (size_t i = 1; i < LIBSEE_MAX_THREADS; i++) {
-        size_t *src = (size_t *)(libsee_thread_cycles + i);
-        size_t *dst = (size_t *)(libsee_thread_cycles);
+        size_t *cycles_source = (size_t *)(&libsee_thread_cycles[0] + i);
+        size_t *cycles_destination = (size_t *)(&libsee_thread_cycles[0]);
+        size_t *calls_source = (size_t *)(&libsee_thread_calls[0] + i);
+        size_t *calls_destination = (size_t *)(&libsee_thread_calls[0]);
         for (size_t j = 0; j < counters_per_thread; j++) {
-            dst[j] += src[j];
-            total_cycles += src[j];
+            cycles_destination[j] += cycles_source[j];
+            calls_destination[j] += calls_source[j];
         }
     }
 
@@ -1310,15 +1305,16 @@ void libsee_finalize(void) {
         number_of_counters_must_be_equal);
 
     // Assigning the total cycles for each function
-    for (size_t i = 0; i < sizeof(named_stats) / sizeof(named_stats[0]); i++) {
-        named_stats[i].total_cpu_cycles = *(size_t *)(libsee_thread_cycles + i);
+    for (size_t i = 0; i < counters_per_thread; i++) {
+        named_stats[i].total_cycles = *(size_t *)(&libsee_thread_cycles[0].strcpy + i);
+        named_stats[i].total_calls = *(size_t *)(&libsee_thread_calls[0].strcpy + i);
     }
 
     // Sort the `named_stats` array with the simplest algorithm possible,
     // asymptotic complexity is not a concern here. BUBBLE SORT FOR THE WIN! I'm eight again :)
-    for (size_t i = 0; i < sizeof(named_stats) / sizeof(named_stats[0]) - 1; i++) {
-        for (size_t j = 0; j < sizeof(named_stats) / sizeof(named_stats[0]) - i - 1; j++) {
-            if (named_stats[j].total_cpu_cycles < named_stats[j + 1].total_cpu_cycles) {
+    for (size_t i = 0; i < counters_per_thread - 1; i++) {
+        for (size_t j = 0; j < counters_per_thread - i - 1; j++) {
+            if (named_stats[j].total_cycles < named_stats[j + 1].total_cycles) {
                 libsee_name_stats temp = named_stats[j];
                 named_stats[j] = named_stats[j + 1];
                 named_stats[j + 1] = temp;
@@ -1328,24 +1324,70 @@ void libsee_finalize(void) {
 
     // Print them in a descending order of usage, manually formatting the output
     // as we can't rely on the presence of `printf` or `fprintf`.
-    syscall_print("Function usage (in descending order of CPU cycles):\n", 52);
-    // Print the sorted stats
-    if (0)
-        for (size_t i = 0; i < sizeof(named_stats) / sizeof(named_stats[0]); i++) {
-            // Since we can't use sprintf, snprintf, etc., construct the string manually.
-            // Assuming you have a function `construct_and_print_stat` tailored for this environment.
-            // This function would take the function name and the cpu_cycles count,
-            // construct a string from them, and then call `syscall_print`.
-            // Since such function details are not provided, I'll outline a pseudocode approach.
 
-            char stat_line[256]; // Ensure this is large enough for your function names and numbers
-            // You would need to implement a safe and suitable method to convert numbers to strings and concatenate
-            // them. For the sake of example, I'm assuming a function that could do this, named `format_stat_line`. This
-            // function would format the line into something like "function_name: cpu_cycles\n".
-            // format_stat_line(stat_line, named_stats[i].function_name, named_stats[i].total_cpu_cycles);
-            // syscall_print(stat_line, strlen(stat_line)); // Adjust the length as necessary
+#if LIBSEE_LOG_EVERYTHING
+    syscall_print("LibSee function usage report (in descending order of CPU cycles):\n", 52);
+#endif
+    syscall_print("----------------------------------LIBSEE----------------------------------------\n", 81);
+    syscall_print("function,cycles,calls\n", 22);
+
+    // Print the sorted stats
+    for (size_t i = 0; i < sizeof(named_stats) / sizeof(named_stats[0]); i++) {
+        // Since we can't use sprintf, snprintf, etc., construct the string manually.
+        // Printing a nicely formatted and colored text in the console is gonna be a nighmare,
+        // so let's output a CSV file instead. We will later parse and clean those on the Python side.
+        char stat_line[256];
+        size_t stat_line_length = 0;
+        // Print the function name, the total CPU cycles, and the total calls into `stat_line`.
+        char const *function_name = named_stats[i].function_name;
+        size_t total_cycles = named_stats[i].total_cycles;
+        size_t total_calls = named_stats[i].total_calls;
+        if (total_cycles == 0) { break; } // The function was never called, so we can stop here.
+
+        // Manually convert total_cycles and total_calls to strings and construct the stat_line.
+        char number_buffer[64]; // Buffer for numbers, bigger than any 64-bit number string representation
+        size_t num_length;
+
+        // Append function name
+        for (stat_line_length = 0; function_name[stat_line_length] != '\0'; ++stat_line_length)
+            stat_line[stat_line_length] = function_name[stat_line_length];
+        stat_line[stat_line_length++] = ',';
+
+        // Convert and append total_cycles
+        num_length = 0; // Reset num_length for a new conversion
+        if (total_cycles == 0) { number_buffer[num_length++] = '0'; }
+        else {
+            size_t n = total_cycles;
+            while (n > 0) {
+                number_buffer[num_length++] = '0' + (n % 10);
+                n /= 10;
+            }
+        }
+        // Reverse the string representation of total_cycles
+        for (size_t j = 0; j < num_length; ++j) { stat_line[stat_line_length++] = number_buffer[num_length - j - 1]; }
+        stat_line[stat_line_length++] = ',';
+
+        // Convert and append total_calls
+        num_length = 0; // Reset num_length for a new conversion
+        if (total_calls == 0) { number_buffer[num_length++] = '0'; }
+        else {
+            size_t n = total_calls;
+            while (n > 0) {
+                number_buffer[num_length++] = '0' + (n % 10);
+                n /= 10;
+            }
         }
 
+        // Reverse the string representation of total_calls
+        for (size_t j = 0; j < num_length; ++j) { stat_line[stat_line_length++] = number_buffer[num_length - j - 1]; }
+        stat_line[stat_line_length++] = '\n'; // End of line
+
+        // Make sure the line is null-terminated, although it's not required for syscall_print.
+        stat_line[stat_line_length] = '\0';
+        syscall_print(stat_line, stat_line_length);
+    }
+
+    syscall_print("----------------------------------LIBSEE----------------------------------------\n", 81);
     close_stdout();
 }
 
