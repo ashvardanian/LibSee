@@ -491,7 +491,6 @@ void syscall_print(char const *buf, size_t count) {
 
 void reopen_stdout(void) {
     long ret;
-    // We'll assume "/dev/tty" corresponds to file path with FD 5 just for this illustration.
     // Typically, opening a file would require a path, which complicates direct syscalls,
     // because syscalls don't handle C strings directly. However, here's a conceptual approach.
     char const path_to_dev_tty[9] = "/dev/tty";
@@ -1256,6 +1255,68 @@ void libsee_initialize(void) {
 #endif
 }
 
+size_t libsee_print_size(size_t number, char thousands_separator, char *buffer) {
+    if (number == 0) {
+        buffer[0] = '0';
+        buffer[1] = '\0'; // Null terminate the string
+        return 1;
+    }
+
+    size_t temp = number;
+    size_t digits = 0;
+    while (temp > 0) {
+        temp /= 10;
+        digits++;
+    }
+
+    // Calculate the total length including commas
+    size_t total_length = digits + (digits - 1) / 3;
+
+    temp = number;
+    size_t index = total_length; // Start filling the buffer from the end
+    buffer[index--] = '\0';      // Null-terminate the string
+
+    for (size_t i = 0; i < digits; i++) {
+        // Insert comma every three digits
+        if (i > 0 && i % 3 == 0) buffer[index--] = thousands_separator;
+        buffer[index--] = (temp % 10) + '0'; // Convert digit to character
+        temp /= 10;
+    }
+
+    return total_length;
+}
+
+size_t libsee_print_double(double number, char thousands_separator, size_t decimal_points, char *buffer) {
+    // Handle negative numbers
+    if (number < 0) {
+        *buffer++ = '-';
+        number = -number; // Make the number positive for formatting
+    }
+
+    // Split number into integer and fractional parts
+    double integer_part = (size_t)number;
+    double fractional_part = number - integer_part;
+
+    // Convert integer part to string with thousands separator
+    size_t intPartLength = libsee_print_size((size_t)integer_part, thousands_separator, buffer);
+
+    // Add decimal point
+    buffer[intPartLength] = '.';
+    size_t totalLength = intPartLength + 1; // +1 for the decimal point
+
+    // Handle fractional part
+    for (size_t i = 0; i < decimal_points; i++) {
+        fractional_part *= 10;                   // Shift fractional part to the left
+        int digit = (int)(fractional_part) % 10; // Get next digit
+        buffer[totalLength++] = '0' + digit;     // Convert digit to character and store
+    }
+
+    // Null-terminate the string
+    buffer[totalLength] = '\0';
+
+    return totalLength; // Return length of the string
+}
+
 void libsee_finalize(void) {
     reopen_stdout();
 
@@ -1264,6 +1325,7 @@ void libsee_finalize(void) {
 #endif
 
     // Aggregate stats from all threads into the first one.
+    size_t cycles_across_threads = 0;
     size_t counters_per_thread = sizeof(thread_local_counters) / sizeof(size_t);
     for (size_t i = 1; i < LIBSEE_MAX_THREADS; i++) {
         size_t *cycles_source = (size_t *)(&libsee_thread_cycles[0] + i);
@@ -1271,6 +1333,7 @@ void libsee_finalize(void) {
         size_t *calls_source = (size_t *)(&libsee_thread_calls[0] + i);
         size_t *calls_destination = (size_t *)(&libsee_thread_calls[0]);
         for (size_t j = 0; j < counters_per_thread; j++) {
+            cycles_across_threads += cycles_source[j];
             cycles_destination[j] += cycles_source[j];
             calls_destination[j] += calls_source[j];
         }
@@ -1329,7 +1392,7 @@ void libsee_finalize(void) {
     syscall_print("LibSee function usage report (in descending order of CPU cycles):\n", 52);
 #endif
     syscall_print("----------------------------------LIBSEE----------------------------------------\n", 81);
-    syscall_print("function,cycles,calls\n", 22);
+    syscall_print("function,cycles,calls,share\n", 28);
 
     // Print the sorted stats
     for (size_t i = 0; i < sizeof(named_stats) / sizeof(named_stats[0]); i++) {
@@ -1342,47 +1405,32 @@ void libsee_finalize(void) {
         char const *function_name = named_stats[i].function_name;
         size_t total_cycles = named_stats[i].total_cycles;
         size_t total_calls = named_stats[i].total_calls;
+        double percent_cycles = (double)total_cycles * 100.0 / (double)cycles_across_threads;
         if (total_cycles == 0) { break; } // The function was never called, so we can stop here.
 
         // Manually convert total_cycles and total_calls to strings and construct the stat_line.
         char number_buffer[64]; // Buffer for numbers, bigger than any 64-bit number string representation
         size_t num_length;
 
-        // Append function name
-        for (stat_line_length = 0; function_name[stat_line_length] != '\0'; ++stat_line_length)
-            stat_line[stat_line_length] = function_name[stat_line_length];
+        // Append function name to `stat_line`.
+        while (*function_name) { stat_line[stat_line_length++] = *function_name++; }
         stat_line[stat_line_length++] = ',';
 
-        // Convert and append total_cycles
-        num_length = 0; // Reset num_length for a new conversion
-        if (total_cycles == 0) { number_buffer[num_length++] = '0'; }
-        else {
-            size_t n = total_cycles;
-            while (n > 0) {
-                number_buffer[num_length++] = '0' + (n % 10);
-                n /= 10;
-            }
-        }
-        // Reverse the string representation of total_cycles
-        for (size_t j = 0; j < num_length; ++j) { stat_line[stat_line_length++] = number_buffer[num_length - j - 1]; }
+        // Convert and append total_cycles with commas.
+        stat_line_length += libsee_print_size(total_cycles, ' ', stat_line + stat_line_length);
         stat_line[stat_line_length++] = ',';
 
-        // Convert and append total_calls
-        num_length = 0; // Reset num_length for a new conversion
-        if (total_calls == 0) { number_buffer[num_length++] = '0'; }
-        else {
-            size_t n = total_calls;
-            while (n > 0) {
-                number_buffer[num_length++] = '0' + (n % 10);
-                n /= 10;
-            }
-        }
+        // Convert and append total_calls with commas.
+        stat_line_length += libsee_print_size(total_calls, ' ', stat_line + stat_line_length);
+        stat_line[stat_line_length++] = ',';
 
-        // Reverse the string representation of total_calls
-        for (size_t j = 0; j < num_length; ++j) { stat_line[stat_line_length++] = number_buffer[num_length - j - 1]; }
+        // Convert and append percent_cycles with specified decimal points (e.g., 2).
+        stat_line_length += libsee_print_double(percent_cycles, ' ', 3, stat_line + stat_line_length);
+        stat_line[stat_line_length++] = ' ';  // Some space
+        stat_line[stat_line_length++] = '%';  // Percent sign
         stat_line[stat_line_length++] = '\n'; // End of line
 
-        // Make sure the line is null-terminated, although it's not required for syscall_print.
+        // Ensure the line is null-terminated.
         stat_line[stat_line_length] = '\0';
         syscall_print(stat_line, stat_line_length);
     }
