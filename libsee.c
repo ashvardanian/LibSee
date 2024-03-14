@@ -73,106 +73,110 @@ typedef size_t rsize_t;
  *  Every element is a `size_t` intialized to zero, so the entire structure can be zeroed with `memset`,
  *  or casted to an unsigned integers array and used for element-wise operations.
  */
-typedef struct thread_local_counters {
-    size_t strcpy;
-    size_t strcpy_s;
-    size_t strncpy;
-    size_t strncpy_s;
-    size_t strcat;
-    size_t strcat_s;
-    size_t strncat;
-    size_t strncat_s;
-    size_t strxfrm;
-    size_t strlen;
-    size_t strnlen_s;
-    size_t strcmp;
-    size_t strncmp;
-    size_t strcoll;
-    size_t strchr;
-    size_t strrchr;
-    size_t strspn;
-    size_t strcspn;
-    size_t strpbrk;
-    size_t strstr;
-    size_t strtok;
-    size_t strtok_s;
-    size_t memchr;
-    size_t memcmp;
-    size_t memset;
-    size_t memset_s;
-    size_t memcpy;
-    size_t memcpy_s;
-    size_t memmove;
-    size_t memmove_s;
-    size_t strerror;
-    size_t strerror_s;
-    size_t memmem;
-    size_t memrchr;
+typedef union thread_local_counters {
+    struct {
+        size_t strcpy;
+        size_t strcpy_s;
+        size_t strncpy;
+        size_t strncpy_s;
+        size_t strcat;
+        size_t strcat_s;
+        size_t strncat;
+        size_t strncat_s;
+        size_t strxfrm;
+        size_t strlen;
+        size_t strnlen_s;
+        size_t strcmp;
+        size_t strncmp;
+        size_t strcoll;
+        size_t strchr;
+        size_t strrchr;
+        size_t strspn;
+        size_t strcspn;
+        size_t strpbrk;
+        size_t strstr;
+        size_t strtok;
+        size_t strtok_s;
+        size_t memchr;
+        size_t memcmp;
+        size_t memset;
+        size_t memset_s;
+        size_t memcpy;
+        size_t memcpy_s;
+        size_t memmove;
+        size_t memmove_s;
+        size_t strerror;
+        size_t strerror_s;
+        size_t memmem;
+        size_t memrchr;
 
-    size_t malloc;
-    size_t calloc;
-    size_t realloc;
-    size_t free;
-    size_t aligned_alloc;
+        size_t malloc;
+        size_t calloc;
+        size_t realloc;
+        size_t free;
+        size_t aligned_alloc;
 
-    size_t qsort;
-    size_t qsort_s;
-    size_t bsearch;
-    size_t bsearch_s;
+        size_t qsort;
+        size_t qsort_s;
+        size_t bsearch;
+        size_t bsearch_s;
 
-    size_t srand;
-    size_t rand;
+        size_t srand;
+        size_t rand;
 
-    size_t fopen;
-    size_t freopen;
-    size_t fclose;
-    size_t fflush;
-    size_t setbuf;
-    size_t setvbuf;
-    size_t fread;
-    size_t fwrite;
-    size_t fseek;
-    size_t ftell;
-    size_t fsetpos;
-    size_t fgetpos;
-    size_t rewind;
-    size_t clearerr;
-    size_t feof;
-    size_t ferror;
-    size_t perror;
-    size_t scanf;
-    size_t fscanf;
-    size_t sscanf;
-    size_t vscanf;
-    size_t vfscanf;
-    size_t vsscanf;
-    size_t printf;
-    size_t fprintf;
-    size_t sprintf;
-    size_t snprintf;
-    size_t vprintf;
-    size_t vfprintf;
-    size_t vsprintf;
-    size_t vsnprintf;
+        size_t fopen;
+        size_t freopen;
+        size_t fclose;
+        size_t fflush;
+        size_t setbuf;
+        size_t setvbuf;
+        size_t fread;
+        size_t fwrite;
+        size_t fseek;
+        size_t ftell;
+        size_t fsetpos;
+        size_t fgetpos;
+        size_t rewind;
+        size_t clearerr;
+        size_t feof;
+        size_t ferror;
+        size_t perror;
+        size_t scanf;
+        size_t fscanf;
+        size_t sscanf;
+        size_t vscanf;
+        size_t vfscanf;
+        size_t vsscanf;
+        size_t printf;
+        size_t fprintf;
+        size_t sprintf;
+        size_t snprintf;
+        size_t vprintf;
+        size_t vfprintf;
+        size_t vsprintf;
+        size_t vsnprintf;
 
-    size_t difftime;
-    size_t time;
-    size_t clock;
-    size_t timespec_get;
-    size_t timespec_getres;
-    size_t asctime;
-    size_t asctime_s;
-    size_t ctime;
-    size_t ctime_s;
-    size_t strftime;
-    size_t wcsftime;
-    size_t gmtime;
-    size_t gmtime_r;
-    size_t gmtime_s;
-    size_t localtime;
-    size_t localtime_r;
-    size_t localtime_s;
-    size_t mktime;
+        size_t difftime;
+        size_t time;
+        size_t clock;
+        size_t timespec_get;
+        size_t timespec_getres;
+        size_t asctime;
+        size_t asctime_s;
+        size_t ctime;
+        size_t ctime_s;
+        size_t strftime;
+        size_t wcsftime;
+        size_t gmtime;
+        size_t gmtime_r;
+        size_t gmtime_s;
+        size_t localtime;
+        size_t localtime_r;
+        size_t localtime_s;
+        size_t mktime;
+    } named;
+
+    size_t indexed[94];
 } thread_local_counters;
 
 #pragma region Function Pointers
@@ -415,30 +419,26 @@ static thread_local_counters libsee_thread_calls[LIBSEE_MAX_THREADS] = {0};
 
 void libsee_initialize_if_not(void);
 
-void libsee_get_cpu_cycle_and_index(size_t *cycle, size_t *index) {
-    size_t cycle_count;
+size_t libsee_get_cpu_index(void) {
     size_t cpu_index;
 #ifdef __aarch64__
     // On 64-bit Arm (Aarch64) we can use the MPIDR_EL1 register to get the CPU index.
     // https://developer.arm.com/documentation/ddi0601/2020-12/AArch64-Registers/MPIDR-EL1--Multiprocessor-Affinity-Register
     size_t mpidr;
     asm volatile("mrs %0, mpidr_el1" : "=r"(mpidr));
-    cpu_index = mpidr & 0xFF;                               // Extract Affinity level 0 as CPU index
-    asm volatile("mrs %0, cntvct_el0" : "=r"(cycle_count)); // Read the virtual count register
+    cpu_index = mpidr & 0xFF; // Extract Affinity level 0 as CPU index
 #elif defined(__x86_64__) || defined(__i386__)
     // On x86 we can use RDTSCP to get the CPU index.
     // https://en.wikipedia.org/wiki/Time_Stamp_Counter
+    size_t cycle_count;
     asm volatile("rdtscp" : "=A"(cycle_count), "=c"(cpu_index));
 #else
-    // Placeholder for other architectures
-    cycle_count = 0;
     cpu_index = 0;
 #endif
-    *cycle = cycle_count;
-    *index = cpu_index;
+    return cpu_index;
 }
 
-void libsee_get_cpu_cycle(size_t *cycle) {
+size_t libsee_get_cpu_cycle(void) {
     size_t cycle_count;
 #ifdef __aarch64__
     // ARMv8 implementation
@@ -452,7 +452,7 @@ void libsee_get_cpu_cycle(size_t *cycle) {
     // Placeholder for other architectures
     cycle_count = 0;
 #endif
-    *cycle = cycle_count;
+    return cycle_count;
 }
 
 void syscall_print(char const *buf, size_t count) {
@@ -547,12 +547,13 @@ void close_stdout(void) {
         libsee_initialize_if_not();                                          \
         libsee_log(#function_name "-started\n", sizeof(#function_name) + 9); \
         size_t _cpu_index, _cycle_count_start, _cycle_count_end;             \
-        libsee_get_cpu_cycle_and_index(&_cycle_count_start, &_cpu_index);    \
+        _cpu_index = libsee_get_cpu_index();                                 \
+        _cycle_count_start = libsee_get_cpu_cycle();                         \
         libsee_apis.function_name(__VA_ARGS__);                              \
-        libsee_get_cpu_cycle(&_cycle_count_end);                             \
+        _cycle_count_end = libsee_get_cpu_cycle();                           \
         size_t cycle_count = _cycle_count_end - _cycle_count_start;          \
-        libsee_thread_cycles[_cpu_index].function_name += cycle_count;       \
-        libsee_thread_calls[_cpu_index].function_name++;                     \
+        libsee_thread_cycles[_cpu_index].named.function_name += cycle_count; \
+        libsee_thread_calls[_cpu_index].named.function_name++;               \
         libsee_log(#function_name "-closed\n", sizeof(#function_name) + 8);  \
     } while (0)
 
@@ -561,12 +562,13 @@ void close_stdout(void) {
         libsee_initialize_if_not();                                          \
         libsee_log(#function_name "-started\n", sizeof(#function_name) + 9); \
         size_t _cpu_index, _cycle_count_start, _cycle_count_end;             \
-        libsee_get_cpu_cycle_and_index(&_cycle_count_start, &_cpu_index);    \
+        _cpu_index = libsee_get_cpu_index();                                 \
+        _cycle_count_start = libsee_get_cpu_cycle();                         \
         return_type _result = libsee_apis.function_name(__VA_ARGS__);        \
-        libsee_get_cpu_cycle(&_cycle_count_end);                             \
+        _cycle_count_end = libsee_get_cpu_cycle();                           \
         size_t cycle_count = _cycle_count_end - _cycle_count_start;          \
-        libsee_thread_cycles[_cpu_index].function_name += cycle_count;       \
-        libsee_thread_calls[_cpu_index].function_name++;                     \
+        libsee_thread_cycles[_cpu_index].named.function_name += cycle_count; \
+        libsee_thread_calls[_cpu_index].named.function_name++;               \
         libsee_log(#function_name "-closed\n", sizeof(#function_name) + 8);  \
         return _result;                                                      \
     } while (0)
@@ -576,12 +578,13 @@ void close_stdout(void) {
         libsee_initialize_if_not();                                          \
         libsee_log(#function_name "-started\n", sizeof(#function_name) + 9); \
         size_t _cpu_index, _cycle_count_start, _cycle_count_end;             \
-        libsee_get_cpu_cycle_and_index(&_cycle_count_start, &_cpu_index);    \
+        _cpu_index = libsee_get_cpu_index();                                 \
+        _cycle_count_start = libsee_get_cpu_cycle();                         \
         returned_value = libsee_apis.function_name(__VA_ARGS__);             \
-        libsee_get_cpu_cycle(&_cycle_count_end);                             \
+        _cycle_count_end = libsee_get_cpu_cycle();                           \
         size_t cycle_count = _cycle_count_end - _cycle_count_start;          \
-        libsee_thread_cycles[_cpu_index].function_name += cycle_count;       \
-        libsee_thread_calls[_cpu_index].function_name++;                     \
+        libsee_thread_cycles[_cpu_index].named.function_name += cycle_count; \
+        libsee_thread_calls[_cpu_index].named.function_name++;               \
         libsee_log(#function_name "-closed\n", sizeof(#function_name) + 8);  \
     } while (0)
 
@@ -1143,7 +1146,7 @@ typedef struct libsee_name_stats {
 void libsee_initialize(void) {
 
     // Initialize all the counters to zeros, without using `memset`
-    size_t *counters = (size_t *)&libsee_thread_cycles[0].strcpy;
+    size_t *counters = libsee_thread_cycles[0].indexed;
     size_t total_counters_per_thread = sizeof(thread_local_counters) / sizeof(size_t);
     size_t total_counters_across_threads = LIBSEE_MAX_THREADS * total_counters_per_thread;
     for (size_t i = 0; i < total_counters_across_threads; i++) { counters[i] = 0; }
@@ -1298,23 +1301,23 @@ size_t libsee_print_double(double number, char thousands_separator, size_t decim
     double fractional_part = number - integer_part;
 
     // Convert integer part to string with thousands separator
-    size_t intPartLength = libsee_print_size((size_t)integer_part, thousands_separator, buffer);
+    size_t integer_length = libsee_print_size((size_t)integer_part, thousands_separator, buffer);
 
     // Add decimal point
-    buffer[intPartLength] = '.';
-    size_t totalLength = intPartLength + 1; // +1 for the decimal point
+    buffer[integer_length] = '.';
+    size_t total_length = integer_length + 1; // +1 for the decimal point
 
     // Handle fractional part
     for (size_t i = 0; i < decimal_points; i++) {
         fractional_part *= 10;                   // Shift fractional part to the left
         int digit = (int)(fractional_part) % 10; // Get next digit
-        buffer[totalLength++] = '0' + digit;     // Convert digit to character and store
+        buffer[total_length++] = '0' + digit;    // Convert digit to character and store
     }
 
     // Null-terminate the string
-    buffer[totalLength] = '\0';
+    buffer[total_length] = '\0';
 
-    return totalLength; // Return length of the string
+    return total_length; // Return length of the string
 }
 
 size_t libsee_pad_buffer(char *buffer, size_t current_length, size_t target_length) {
@@ -1330,53 +1333,49 @@ void libsee_finalize(void) {
     syscall_print("Finalizing\n", 11);
 #endif
 
-    // Aggregate stats from all threads into the first one.
     size_t cycles_across_threads = 0;
     size_t counters_per_thread = sizeof(thread_local_counters) / sizeof(size_t);
-    for (size_t i = 1; i < LIBSEE_MAX_THREADS; i++) {
-        size_t *cycles_source = (size_t *)(&libsee_thread_cycles[0] + i);
-        size_t *cycles_destination = (size_t *)(&libsee_thread_cycles[0]);
-        size_t *calls_source = (size_t *)(&libsee_thread_calls[0] + i);
-        size_t *calls_destination = (size_t *)(&libsee_thread_calls[0]);
+    for (size_t i = 0; i < counters_per_thread; i++)
+        for (size_t t = 0; t < LIBSEE_MAX_THREADS; t++) cycles_across_threads += libsee_thread_cycles[t].indexed[i];
+
+    // Aggregate stats from all threads into the first one.
+    for (size_t t = 1; t < LIBSEE_MAX_THREADS; t++) {
         for (size_t j = 0; j < counters_per_thread; j++) {
-            cycles_across_threads += cycles_source[j];
-            cycles_destination[j] += cycles_source[j];
-            calls_destination[j] += calls_source[j];
+            libsee_thread_cycles[0].indexed[j] += libsee_thread_cycles[t].indexed[j];
+            libsee_thread_calls[0].indexed[j] += libsee_thread_calls[t].indexed[j];
         }
     }
 
     // Create an on-stack array of all of those counters, populate them, and sort by the most called functions.
     libsee_name_stats named_stats[] = {// Strings
-        {"strcpy", 0}, {"strcpy_s", 0}, {"strncpy", 0}, {"strncpy_s", 0}, {"strcat", 0}, {"strcat_s", 0},
-        {"strncat", 0}, {"strncat_s", 0}, {"strxfrm", 0}, {"strlen", 0}, {"strnlen_s", 0}, {"strcmp", 0},
-        {"strncmp", 0}, {"strcoll", 0}, {"strchr", 0}, {"strrchr", 0}, {"strspn", 0}, {"strcspn", 0}, {"strpbrk", 0},
-        {"strstr", 0}, {"strtok", 0}, {"strtok_s", 0}, {"memchr", 0}, {"memcmp", 0}, {"memset", 0}, {"memset_s", 0},
-        {"memcpy", 0}, {"memcpy_s", 0}, {"memmove", 0}, {"memmove_s", 0}, {"strerror", 0}, {"strerror_s", 0},
-        {"memmem", 0}, {"memrchr", 0},
+        {"strcpy"}, {"strcpy_s"}, {"strncpy"}, {"strncpy_s"}, {"strcat"}, {"strcat_s"}, {"strncat"}, {"strncat_s"},
+        {"strxfrm"}, {"strlen"}, {"strnlen_s"}, {"strcmp"}, {"strncmp"}, {"strcoll"}, {"strchr"}, {"strrchr"},
+        {"strspn"}, {"strcspn"}, {"strpbrk"}, {"strstr"}, {"strtok"}, {"strtok_s"}, {"memchr"}, {"memcmp"}, {"memset"},
+        {"memset_s"}, {"memcpy"}, {"memcpy_s"}, {"memmove"}, {"memmove_s"}, {"strerror"}, {"strerror_s"}, {"memmem"},
+        {"memrchr"},
         // Heap
-        {"malloc", 0}, {"calloc", 0}, {"realloc", 0}, {"free", 0}, {"aligned_alloc", 0},
+        {"malloc"}, {"calloc"}, {"realloc"}, {"free"}, {"aligned_alloc"},
         // Algorithms
-        {"qsort", 0}, {"qsort_s", 0}, {"bsearch", 0}, {"bsearch_s", 0},
+        {"qsort"}, {"qsort_s"}, {"bsearch"}, {"bsearch_s"},
         // Numerics
-        {"srand", 0}, {"rand", 0},
+        {"srand"}, {"rand"},
         // I/O
-        {"fopen", 0}, {"freopen", 0}, {"fclose", 0}, {"fflush", 0}, {"setbuf", 0}, {"setvbuf", 0}, {"fread", 0},
-        {"fwrite", 0}, {"fseek", 0}, {"ftell", 0}, {"fsetpos", 0}, {"fgetpos", 0}, {"rewind", 0}, {"clearerr", 0},
-        {"feof", 0}, {"ferror", 0}, {"perror", 0}, {"scanf", 0}, {"fscanf", 0}, {"sscanf", 0}, {"vscanf", 0},
-        {"vfscanf", 0}, {"vsscanf", 0}, {"printf", 0}, {"fprintf", 0}, {"sprintf", 0}, {"snprintf", 0}, {"vprintf", 0},
-        {"vfprintf", 0}, {"vsprintf", 0}, {"vsnprintf", 0},
+        {"fopen"}, {"freopen"}, {"fclose"}, {"fflush"}, {"setbuf"}, {"setvbuf"}, {"fread"}, {"fwrite"}, {"fseek"},
+        {"ftell"}, {"fsetpos"}, {"fgetpos"}, {"rewind"}, {"clearerr"}, {"feof"}, {"ferror"}, {"perror"}, {"scanf"},
+        {"fscanf"}, {"sscanf"}, {"vscanf"}, {"vfscanf"}, {"vsscanf"}, {"printf"}, {"fprintf"}, {"sprintf"},
+        {"snprintf"}, {"vprintf"}, {"vfprintf"}, {"vsprintf"}, {"vsnprintf"},
         // Time
-        {"difftime", 0}, {"time", 0}, {"clock", 0}, {"timespec_get", 0}, {"timespec_getres", 0}, {"asctime", 0},
-        {"asctime_s", 0}, {"ctime", 0}, {"ctime_s", 0}, {"strftime", 0}, {"wcsftime", 0}, {"gmtime", 0},
-        {"gmtime_r", 0}, {"gmtime_s", 0}, {"localtime", 0}, {"localtime_r", 0}, {"localtime_s", 0}, {"mktime", 0}};
+        {"difftime"}, {"time"}, {"clock"}, {"timespec_get"}, {"timespec_getres"}, {"asctime"}, {"asctime_s"}, {"ctime"},
+        {"ctime_s"}, {"strftime"}, {"wcsftime"}, {"gmtime"}, {"gmtime_r"}, {"gmtime_s"}, {"localtime"}, {"localtime_r"},
+        {"localtime_s"}, {"mktime"}};
 
     COMPILE_TIME_ASSERT(sizeof(real_apis) / sizeof(void *) == sizeof(named_stats) / sizeof(libsee_name_stats),
         number_of_counters_must_be_equal);
 
     // Assigning the total cycles for each function
     for (size_t i = 0; i < counters_per_thread; i++) {
-        named_stats[i].total_cycles = *(size_t *)(&libsee_thread_cycles[0].strcpy + i);
-        named_stats[i].total_calls = *(size_t *)(&libsee_thread_calls[0].strcpy + i);
+        named_stats[i].total_calls = libsee_thread_calls[0].indexed[i];
+        named_stats[i].total_cycles = libsee_thread_cycles[0].indexed[i];
     }
 
     // Sort the `named_stats` array with the simplest algorithm possible,
@@ -1404,7 +1403,7 @@ void libsee_finalize(void) {
     syscall_print("function,           cycles,                                 calls,         share\n", 81);
 
     // Print the sorted stats
-    for (size_t i = 0; i < sizeof(named_stats) / sizeof(named_stats[0]); i++) {
+    for (size_t i = 0; i < counters_per_thread; i++) {
         char stat_line[256];
         size_t stat_line_length = 0;
         char const *function_name = named_stats[i].function_name;
@@ -1432,10 +1431,10 @@ void libsee_finalize(void) {
 
         // Convert and append percent_cycles with specified decimal points (e.g., 2) and padding
         stat_line_length += libsee_print_double(percent_cycles, ' ', 2, stat_line + stat_line_length);
-        stat_line_length = libsee_pad_buffer(stat_line, stat_line_length,
-            column_widths[0] + column_widths[1] + column_widths[2] + column_widths[3]);
 
-        // Newline for next line of data
+        // We don't need padding at the end, just the newline.
+        // stat_line_length = libsee_pad_buffer(stat_line, stat_line_length,
+        //     column_widths[0] + column_widths[1] + column_widths[2] + column_widths[3]);
         stat_line[stat_line_length++] = '\n';
 
         // Ensure the line is null-terminated.
