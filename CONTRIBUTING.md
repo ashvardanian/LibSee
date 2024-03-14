@@ -22,5 +22,8 @@ LD_PRELOAD="$(pwd)/libsee.dylib" ls     # On MacOS
 Debugging:
 
 ```bash
-make clean && make debug && gdb --args env LD_PRELOAD=$(pwd)/libsee.so ls
+make clean && make && LD_PRELOAD=$(pwd)/libsee.so ls # check release build
+make clean && make debug && LD_PRELOAD=$(pwd)/libsee.so ls # check debug build
+make clean && make debug && gdb --args env LD_PRELOAD=$(pwd)/libsee.so ls # debug with gdb
+make clean && make && gdb --args env LD_PRELOAD=$(pwd)/libsee.so ls # catch release-only bugs
 ```

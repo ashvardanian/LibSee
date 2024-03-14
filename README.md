@@ -39,6 +39,7 @@ There are several things worth knowing, that came handy implementing this.
 - On `x86_64` architecture, the `rdtscp` instruction yields both the CPU cycle and also the unique identifier of the core. Very handy if you are profiling a multi-threaded application.
 - Once the unloading sequence reaches `libsee.so`, the `STDOUT` is already closed. So if you want to print to the console, you may want to reopen the `/dev/tty` device before printing usage stats.
 - On MacOS the `sprintf`, `vsprintf`, `snprintf`, `vsnprintf` are macros. You have to `#undef` them.
+- On `Release` builds compilers love replacing your code with `memset` and `memcpy` calls. As the symbol can't be found from inside LibSee, it will `SEGFAULT` so don't forget to disable such optimizations for built-ins `-fno-builtin`.
 
 ## Coverage
 

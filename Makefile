@@ -20,8 +20,12 @@ DEBUG ?= 0
 ifeq ($(DEBUG), 1)
     CFLAGS += -g -DDEBUG
 else
-    CFLAGS += -O2
+    CFLAGS += -g -O2
 endif
+
+# Ban using the built-in functions, otherwise `memset` and `memcpy` 
+# calls will be all over, and the program will SEGFAULT in release builds.
+CFLAGS += -fno-builtin
 
 ifeq ($(UNAME_S), Linux)
     # Linux

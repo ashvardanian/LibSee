@@ -404,6 +404,9 @@ typedef struct real_apis {
     api_mktime_t mktime;
 } real_apis;
 
+#define COMPILE_TIME_ASSERT(predicate, message) typedef char message[(predicate) ? 1 : -1]
+COMPILE_TIME_ASSERT(sizeof(real_apis) == sizeof(thread_local_counters), sizes_of_structs_must_be_equal);
+
 static real_apis libsee_apis = {NULL};
 static thread_local_counters libsee_thread_cycles[LIBSEE_MAX_THREADS] = {0};
 static thread_local_counters libsee_thread_calls[LIBSEE_MAX_THREADS] = {0};
@@ -491,7 +494,7 @@ void reopen_stdout(void) {
     // We'll assume "/dev/tty" corresponds to file path with FD 5 just for this illustration.
     // Typically, opening a file would require a path, which complicates direct syscalls,
     // because syscalls don't handle C strings directly. However, here's a conceptual approach.
-    char const path_to_dev_tty[] = "/dev/tty";
+    char const path_to_dev_tty[9] = "/dev/tty";
 
 #ifdef __aarch64__
     // For AArch64, the 'open' syscall is number 56.
@@ -1303,6 +1306,9 @@ void libsee_finalize(void) {
         {"asctime_s", 0}, {"ctime", 0}, {"ctime_s", 0}, {"strftime", 0}, {"wcsftime", 0}, {"gmtime", 0},
         {"gmtime_r", 0}, {"gmtime_s", 0}, {"localtime", 0}, {"localtime_r", 0}, {"localtime_s", 0}, {"mktime", 0}};
 
+    COMPILE_TIME_ASSERT(sizeof(real_apis) / sizeof(void *) == sizeof(named_stats) / sizeof(libsee_name_stats),
+        number_of_counters_must_be_equal);
+
     // Assigning the total cycles for each function
     for (size_t i = 0; i < sizeof(named_stats) / sizeof(named_stats[0]); i++) {
         named_stats[i].total_cpu_cycles = *(size_t *)(libsee_thread_cycles + i);
@@ -1324,20 +1330,21 @@ void libsee_finalize(void) {
     // as we can't rely on the presence of `printf` or `fprintf`.
     syscall_print("Function usage (in descending order of CPU cycles):\n", 52);
     // Print the sorted stats
-    for (size_t i = 0; i < sizeof(named_stats) / sizeof(named_stats[0]); i++) {
-        // Since we can't use sprintf, snprintf, etc., construct the string manually.
-        // Assuming you have a function `construct_and_print_stat` tailored for this environment.
-        // This function would take the function name and the cpu_cycles count,
-        // construct a string from them, and then call `syscall_print`.
-        // Since such function details are not provided, I'll outline a pseudocode approach.
+    if (0)
+        for (size_t i = 0; i < sizeof(named_stats) / sizeof(named_stats[0]); i++) {
+            // Since we can't use sprintf, snprintf, etc., construct the string manually.
+            // Assuming you have a function `construct_and_print_stat` tailored for this environment.
+            // This function would take the function name and the cpu_cycles count,
+            // construct a string from them, and then call `syscall_print`.
+            // Since such function details are not provided, I'll outline a pseudocode approach.
 
-        char stat_line[256]; // Ensure this is large enough for your function names and numbers
-        // You would need to implement a safe and suitable method to convert numbers to strings and concatenate them.
-        // For the sake of example, I'm assuming a function that could do this, named `format_stat_line`.
-        // This function would format the line into something like "function_name: cpu_cycles\n".
-        // format_stat_line(stat_line, named_stats[i].function_name, named_stats[i].total_cpu_cycles);
-        // syscall_print(stat_line, strlen(stat_line)); // Adjust the length as necessary
-    }
+            char stat_line[256]; // Ensure this is large enough for your function names and numbers
+            // You would need to implement a safe and suitable method to convert numbers to strings and concatenate
+            // them. For the sake of example, I'm assuming a function that could do this, named `format_stat_line`. This
+            // function would format the line into something like "function_name: cpu_cycles\n".
+            // format_stat_line(stat_line, named_stats[i].function_name, named_stats[i].total_cpu_cycles);
+            // syscall_print(stat_line, strlen(stat_line)); // Adjust the length as necessary
+        }
 
     close_stdout();
 }
