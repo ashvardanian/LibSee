@@ -1317,6 +1317,12 @@ size_t libsee_print_double(double number, char thousands_separator, size_t decim
     return totalLength; // Return length of the string
 }
 
+size_t libsee_pad_buffer(char *buffer, size_t current_length, size_t target_length) {
+    while (current_length < target_length) { buffer[current_length++] = ' '; }
+    buffer[current_length] = '\0'; // Null-terminate the padded string
+    return target_length;
+}
+
 void libsee_finalize(void) {
     reopen_stdout();
 
@@ -1392,43 +1398,45 @@ void libsee_finalize(void) {
     syscall_print("LibSee function usage report (in descending order of CPU cycles):\n", 52);
 #endif
     syscall_print("----------------------------------LIBSEE----------------------------------------\n", 81);
-    syscall_print("function,cycles,calls,share\n", 28);
+    size_t column_widths[] = {20, 40, 15, 15};
+
+    // Print headers
+    syscall_print("function,           cycles,                                 calls,         share\n", 81);
 
     // Print the sorted stats
     for (size_t i = 0; i < sizeof(named_stats) / sizeof(named_stats[0]); i++) {
-        // Since we can't use sprintf, snprintf, etc., construct the string manually.
-        // Printing a nicely formatted and colored text in the console is gonna be a nighmare,
-        // so let's output a CSV file instead. We will later parse and clean those on the Python side.
         char stat_line[256];
         size_t stat_line_length = 0;
-        // Print the function name, the total CPU cycles, and the total calls into `stat_line`.
         char const *function_name = named_stats[i].function_name;
         size_t total_cycles = named_stats[i].total_cycles;
         size_t total_calls = named_stats[i].total_calls;
         double percent_cycles = (double)total_cycles * 100.0 / (double)cycles_across_threads;
-        if (total_cycles == 0) { break; } // The function was never called, so we can stop here.
+        if (total_cycles == 0) { continue; } // Skip functions that were never called.
 
-        // Manually convert total_cycles and total_calls to strings and construct the stat_line.
-        char number_buffer[64]; // Buffer for numbers, bigger than any 64-bit number string representation
-        size_t num_length;
-
-        // Append function name to `stat_line`.
-        while (*function_name) { stat_line[stat_line_length++] = *function_name++; }
+        // Append function name and pad
+        size_t name_length = 0;
+        while (function_name[name_length]) { stat_line[stat_line_length++] = function_name[name_length++]; }
         stat_line[stat_line_length++] = ',';
+        stat_line_length = libsee_pad_buffer(stat_line, stat_line_length, column_widths[0]);
 
-        // Convert and append total_cycles with commas.
+        // Convert and append total_cycles with padding
         stat_line_length += libsee_print_size(total_cycles, ' ', stat_line + stat_line_length);
         stat_line[stat_line_length++] = ',';
+        stat_line_length = libsee_pad_buffer(stat_line, stat_line_length, column_widths[0] + column_widths[1]);
 
-        // Convert and append total_calls with commas.
+        // Convert and append total_calls with padding
         stat_line_length += libsee_print_size(total_calls, ' ', stat_line + stat_line_length);
         stat_line[stat_line_length++] = ',';
+        stat_line_length =
+            libsee_pad_buffer(stat_line, stat_line_length, column_widths[0] + column_widths[1] + column_widths[2]);
 
-        // Convert and append percent_cycles with specified decimal points (e.g., 2).
-        stat_line_length += libsee_print_double(percent_cycles, ' ', 3, stat_line + stat_line_length);
-        stat_line[stat_line_length++] = ' ';  // Some space
-        stat_line[stat_line_length++] = '%';  // Percent sign
-        stat_line[stat_line_length++] = '\n'; // End of line
+        // Convert and append percent_cycles with specified decimal points (e.g., 2) and padding
+        stat_line_length += libsee_print_double(percent_cycles, ' ', 2, stat_line + stat_line_length);
+        stat_line_length = libsee_pad_buffer(stat_line, stat_line_length,
+            column_widths[0] + column_widths[1] + column_widths[2] + column_widths[3]);
+
+        // Newline for next line of data
+        stat_line[stat_line_length++] = '\n';
 
         // Ensure the line is null-terminated.
         stat_line[stat_line_length] = '\0';
