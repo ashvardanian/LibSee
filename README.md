@@ -1,14 +1,19 @@
 # LibSee
 
-> _See where you use LibC the most._
-> 
+> _See where you use LibC the most._ <br/>
 > _Trace calls failing tests. Then - roast!_
+
+One-liner, to download and compile the script and run your vavorite query:
+
+```bash
+ls
+```
 
 LibSee overrides LibC symbols using `LD_PRELOAD`, profiling the most commonly used functions, and, optionally, fuzzing their behaviour for testing.
 The library yields a few binaries when compiled:
 
 ```bash
-libsee_time.so # Profiles LibC calls
+libsee.so # Profiles LibC calls
 libsee_fuzz.so # Correct LibC behaviour, but fuzzed!
 ```
 
@@ -62,7 +67,3 @@ Feel free to suggest PRs covering the rest:
 
 [Program support](https://en.cppreference.com/w/c/program) utilities aren't intended.
 
-
-## Further Reading
-
-- LD_PRELOAD is super fun. And easy! [blog](https://jvns.ca/blog/2014/11/27/ld-preload-is-super-fun-and-easy/)

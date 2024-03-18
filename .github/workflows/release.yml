@@ -1,0 +1,134 @@
+name: Release
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  BUILD_TYPE: Release
+  GH_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
+  PYTHONUTF8: 1
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  packages: write
+
+jobs:
+  versioning:
+    name: Semantic Release
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --ignore-scripts --save-dev --prefix ./package-ci @semantic-release/exec @semantic-release/git conventional-changelog-eslint semantic-release && npx --prefix ./package-ci semantic-release
+
+  rebase:
+    name: Rebase Dev. Branch
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: versioning
+    steps:
+      - name: Checkout the latest code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Perform rebase
+        run: |
+          git fetch origin main
+          git checkout main-dev
+          git rebase origin/main
+
+      - name: Push changes
+        uses: CasperWA/push-protected@v2
+        with:
+          token: ${{ secrets.SEMANTIC_REBASE_TOKEN }}
+          branch: main-dev
+          unprotect_reviews: True
+          force: True
+
+  create_linux_deb_package:
+    name: Create Debian Package for ${{ matrix.arch }}
+    runs-on: ubuntu-22.04
+    needs: versioning
+    env:
+      CC: clang
+      CXX: clang++
+      AR: llvm-ar
+      NM: llvm-nm
+      RANLIB: llvm-ranlib
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            target: x86_64-linux-gnu
+          - arch: arm64
+            target: aarch64-linux-gnu
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: "main"
+
+      - name: Get version
+        id: set_version
+        run: |
+          version=$(cat VERSION)
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld make crossbuild-essential-arm64 crossbuild-essential-armhf
+
+      - name: Build C/C++
+        run: |
+          cmake -B build_release \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
+            -DCMAKE_C_COMPILER_TARGET=${{ matrix.target }} \
+            -DCMAKE_CXX_COMPILER_TARGET=${{ matrix.target }} \
+            -DCMAKE_SYSTEM_NAME=Linux \
+            -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
+            -DSTRINGZILLA_BUILD_SHARED=1 \
+            -DSTRINGZILLA_BUILD_BENCHMARK=1 \
+            -DSTRINGZILLA_BUILD_TEST=1
+
+          cmake --build build_release --config Release
+
+          cp build_release/libsee.so "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}.so"
+          mkdir -p "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/DEBIAN"
+          touch "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/DEBIAN/control"
+          mkdir -p "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/usr/local/lib"
+          mkdir "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/usr/local/include"
+          cp include/stringzilla/stringzilla.h "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/usr/local/include/"
+          cp build_release/libsee.so "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/usr/local/lib/"
+          echo -e "Package: stringzilla\nVersion: ${{ steps.set_version.outputs.version }}\nMaintainer: Ash Vardanian\nArchitecture: ${{ matrix.arch }}\nDescription: See where you use LibC the most. Trace calls failing tests. Then - roast!" > "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/DEBIAN/control"
+          dpkg-deb --build "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}"
+
+      - name: Upload library
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "*.so"
+          update_latest_release: true
+
+      - name: Upload archive
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "*.deb"
+          update_latest_release: true
