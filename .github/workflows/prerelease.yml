@@ -33,12 +33,7 @@ jobs:
 
       - name: Build C/C++
         run: |
-          cmake -B build_artifacts \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
-            -DSTRINGZILLA_BUILD_BENCHMARK=1 \
-            -DSTRINGZILLA_BUILD_TEST=1
-
+          cmake -B build_artifacts -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=1
           cmake --build build_artifacts --config RelWithDebInfo
       - name: Test C++
         run: build_artifacts/libsee_test
@@ -59,12 +54,7 @@ jobs:
 
       - name: Build C/C++
         run: |
-          cmake -B build_artifacts \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
-            -DSTRINGZILLA_BUILD_BENCHMARK=1 \
-            -DSTRINGZILLA_BUILD_TEST=1
-
+          cmake -B build_artifacts -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=1
           cmake --build build_artifacts --config RelWithDebInfo
       - name: Test C++
         run: build_artifacts/libsee_test
@@ -103,10 +93,7 @@ jobs:
             -DCMAKE_C_COMPILER_TARGET=${{ matrix.target }} \
             -DCMAKE_CXX_COMPILER_TARGET=${{ matrix.target }} \
             -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
-            -DSTRINGZILLA_BUILD_SHARED=1 \
-            -DSTRINGZILLA_BUILD_BENCHMARK=1 \
-            -DSTRINGZILLA_BUILD_TEST=1
+            -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
 
           cmake --build build_artifacts --config RelWithDebInfo
 
@@ -115,68 +102,4 @@ jobs:
         run: |
           test -e build_artifacts/libsee.so
           test -e build_artifacts/libsee_test
-
-  test_macos:
-    name: MacOS
-    runs-on: macos-12
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: |
-          brew update
-          brew install cmake
-      - name: Build C/C++
-        run: |
-          cmake -B build_artifacts \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
-            -DSTRINGZILLA_BUILD_BENCHMARK=1 \
-            -DSTRINGZILLA_BUILD_TEST=1
-
-          cmake --build build_artifacts --config RelWithDebInfo
-      - name: Test C++
-        run: build_artifacts/libsee_test
-        if: 0
-
-  test_windows:
-    name: Windows
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ilammy/msvc-dev-cmd@v1
-      - name: Build C/C++
-        shell: cmd
-        run: |
-          cmake -GNinja -B build_artifacts ^
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ^
-            -DSTRINGZILLA_BUILD_BENCHMARK=1 ^
-            -DSTRINGZILLA_BUILD_TEST=1
-
-          cmake --build build_artifacts --config RelWithDebInfo
-      - name: Test C++
-        run: .\build_artifacts\libsee_test.exe
-        if: 0
-
-  test_alpine:
-    name: Alpine Linux
-    runs-on: ubuntu-latest
-    container:
-      image: alpine:latest
-      options: --privileged # Needed for certain Docker operations
-    steps:
-      - uses: actions/checkout@v3
-      - name: Build C/C++
-        run: |
-          apk add --update make cmake gcc
-          cmake -B build_artifacts \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
-            -DSTRINGZILLA_BUILD_BENCHMARK=1 \
-            -DSTRINGZILLA_BUILD_TEST=1
-
-          cmake --build build_artifacts --config RelWithDebInfo
-      - name: Test C++
-        run: build_artifacts/libsee_test
         if: 0

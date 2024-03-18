@@ -6,7 +6,7 @@
 One-liner, to download and compile the script and run your vavorite query:
 
 ```bash
-ls
+how? :)
 ```
 
 LibSee overrides LibC symbols using `LD_PRELOAD`, profiling the most commonly used functions, and, optionally, fuzzing their behaviour for testing.
@@ -14,27 +14,8 @@ The library yields a few binaries when compiled:
 
 ```bash
 libsee.so # Profiles LibC calls
-libsee_fuzz.so # Correct LibC behaviour, but fuzzed!
+libsee_and_knee.so # Correct LibC behaviour, but fuzzed!
 ```
-
-Alternatively, you can generate profilers for a provided list of symbols using Python script:
-
-```bash
-$ pip install libsee
-$ libsee --symbols malloc,free ls
-```
-
-## Profiling Examples
-
-I've provided several profiling logs for different binaries in Gists:
-
-- Linux utilities: [ls](https://gist.github.com/ashvardanian/libsee-ls.log), [cat](https://gist.github.com/ashvardanian/libsee-cat.log), [echo](https://gist.github.com/ashvardanian/libsee-echo.log)
-- Common Pyhon applications: FastAPI server.
-- Databses and Search: ClickHouse, USearch.
-
-## Fuzzing Functionality
-
-Fuzzing only covers a few headers and functions for now:
 
 ## Tricks Used
 

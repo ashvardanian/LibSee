@@ -100,10 +100,7 @@ jobs:
             -DCMAKE_C_COMPILER_TARGET=${{ matrix.target }} \
             -DCMAKE_CXX_COMPILER_TARGET=${{ matrix.target }} \
             -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
-            -DSTRINGZILLA_BUILD_SHARED=1 \
-            -DSTRINGZILLA_BUILD_BENCHMARK=1 \
-            -DSTRINGZILLA_BUILD_TEST=1
+            -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
 
           cmake --build build_release --config Release
 
