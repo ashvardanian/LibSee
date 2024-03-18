@@ -6,7 +6,7 @@
 One-liner, to download and compile the script and run your vavorite query:
 
 ```bash
-how? :)
+gcc -g -O2 -fno-builtin -fPIC -nostdlib -nostartfiles -shared -o libsee.so libsee.c
 ```
 
 LibSee overrides LibC symbols using `LD_PRELOAD`, profiling the most commonly used functions, and, optionally, fuzzing their behaviour for testing.
@@ -26,6 +26,7 @@ There are several things worth knowing, that came handy implementing this.
 - Once the unloading sequence reaches `libsee.so`, the `STDOUT` is already closed. So if you want to print to the console, you may want to reopen the `/dev/tty` device before printing usage stats.
 - On MacOS the `sprintf`, `vsprintf`, `snprintf`, `vsnprintf` are macros. You have to `#undef` them.
 - On `Release` builds compilers love replacing your code with `memset` and `memcpy` calls. As the symbol can't be found from inside LibSee, it will `SEGFAULT` so don't forget to disable such optimizations for built-ins `-fno-builtin`.
+- Aarch64 doesn't seem to have an `open` system call, but it [has the generalized `openat`](https://github.com/torvalds/linux/blob/bf3a69c6861ff4dc7892d895c87074af7bc1c400/include/uapi/asm-generic/unistd.h#L158-L159) number 56.
 
 ## Coverage
 
