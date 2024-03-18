@@ -8,6 +8,9 @@
  *  @author Ash Vardanian
  *  @date   March 4, 2024
  */
+#define LIBSEE_VERSION_MAJOR 0
+#define LIBSEE_VERSION_MINOR 0
+#define LIBSEE_VERSION_PATCH 1
 
 #if !defined(LIBSEE_MAX_THREADS) || LIBSEE_MAX_THREADS <= 0
 #define LIBSEE_MAX_THREADS 1024

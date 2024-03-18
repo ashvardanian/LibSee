@@ -1,35 +1,21 @@
 # LibSee
 
-> _See where you use LibC the most._
-> 
+> _See where you use LibC the most._ <br/>
 > _Trace calls failing tests. Then - roast!_
+
+One-liner, to download and compile the script and run your vavorite query:
+
+```bash
+how? :)
+```
 
 LibSee overrides LibC symbols using `LD_PRELOAD`, profiling the most commonly used functions, and, optionally, fuzzing their behaviour for testing.
 The library yields a few binaries when compiled:
 
 ```bash
-libsee_time.so # Profiles LibC calls
-libsee_fuzz.so # Correct LibC behaviour, but fuzzed!
+libsee.so # Profiles LibC calls
+libsee_and_knee.so # Correct LibC behaviour, but fuzzed!
 ```
-
-Alternatively, you can generate profilers for a provided list of symbols using Python script:
-
-```bash
-$ pip install libsee
-$ libsee --symbols malloc,free ls
-```
-
-## Profiling Examples
-
-I've provided several profiling logs for different binaries in Gists:
-
-- Linux utilities: [ls](https://gist.github.com/ashvardanian/libsee-ls.log), [cat](https://gist.github.com/ashvardanian/libsee-cat.log), [echo](https://gist.github.com/ashvardanian/libsee-echo.log)
-- Common Pyhon applications: FastAPI server.
-- Databses and Search: ClickHouse, USearch.
-
-## Fuzzing Functionality
-
-Fuzzing only covers a few headers and functions for now:
 
 ## Tricks Used
 
@@ -62,7 +48,3 @@ Feel free to suggest PRs covering the rest:
 
 [Program support](https://en.cppreference.com/w/c/program) utilities aren't intended.
 
-
-## Further Reading
-
-- LD_PRELOAD is super fun. And easy! [blog](https://jvns.ca/blog/2014/11/27/ld-preload-is-super-fun-and-easy/)
