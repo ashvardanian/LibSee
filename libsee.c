@@ -1148,11 +1148,12 @@ typedef struct libsee_name_stats {
 
 void libsee_initialize(void) {
 
-    // Initialize all the counters to zeros, without using `memset`
-    size_t *counters = libsee_thread_cycles[0].indexed;
+    // Initialize all the cycles to zeros, without using `memset`
+    size_t *cycles = libsee_thread_cycles[0].indexed;
+    size_t *calls = libsee_thread_calls[0].indexed;
     size_t total_counters_per_thread = sizeof(thread_local_counters) / sizeof(size_t);
     size_t total_counters_across_threads = LIBSEE_MAX_THREADS * total_counters_per_thread;
-    for (size_t i = 0; i < total_counters_across_threads; i++) { counters[i] = 0; }
+    for (size_t i = 0; i < total_counters_across_threads; i++) cycles[i] = calls[i] = 0;
 
     // Load the symbols from the underlying implementation
     real_apis *apis = &libsee_apis;
