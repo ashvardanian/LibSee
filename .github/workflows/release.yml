@@ -109,9 +109,8 @@ jobs:
           touch "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/DEBIAN/control"
           mkdir -p "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/usr/local/lib"
           mkdir "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/usr/local/include"
-          cp include/stringzilla/stringzilla.h "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/usr/local/include/"
           cp build_release/libsee.so "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/usr/local/lib/"
-          echo -e "Package: stringzilla\nVersion: ${{ steps.set_version.outputs.version }}\nMaintainer: Ash Vardanian\nArchitecture: ${{ matrix.arch }}\nDescription: See where you use LibC the most. Trace calls failing tests. Then - roast!" > "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/DEBIAN/control"
+          echo -e "Package: libsee\nVersion: ${{ steps.set_version.outputs.version }}\nMaintainer: Ash Vardanian\nArchitecture: ${{ matrix.arch }}\nDescription: See where you use LibC the most. Trace calls failing tests. Then - roast!" > "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}/DEBIAN/control"
           dpkg-deb --build "libsee_linux_${{ matrix.arch }}_${{ steps.set_version.outputs.version }}"
 
       - name: Upload library
