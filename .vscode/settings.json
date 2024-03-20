@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "string.h": "c",
-        "cstdio": "c"
+        "cstdio": "c",
+        "wchar.h": "c"
     }
 }
