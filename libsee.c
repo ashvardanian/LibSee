@@ -69,6 +69,8 @@ typedef int errno_t;
 typedef size_t rsize_t;
 #endif
 
+#define LIBSEE_MAX_SYMBOLS 97
+
 /**
  *  @brief  Contains the number of times each function was called.
  *
@@ -112,6 +114,10 @@ typedef union thread_local_counters {
         size_t strerror_s;
         size_t memmem;
         size_t memrchr;
+
+        size_t wcstombs;
+        size_t wcswidth;
+        size_t wcwidth;
 
         size_t malloc;
         size_t calloc;
@@ -179,7 +185,7 @@ typedef union thread_local_counters {
         size_t mktime;
     } named;
 
-    size_t indexed[94];
+    size_t indexed[LIBSEE_MAX_SYMBOLS];
 } thread_local_counters;
 
 #pragma region Function Pointers
@@ -218,6 +224,10 @@ typedef char *(*api_strerror_t)(int errnum);
 typedef errno_t (*api_strerror_s_t)(char *buf, rsize_t bufsz, errno_t errnum);
 typedef void *(*api_memmem_t)(void const *haystack, size_t haystacklen, void const *needle, size_t needlelen);
 typedef void *(*api_memrchr_t)(void const *s, int c, size_t n);
+
+typedef size_t (*api_wcstombs_t)(char *dest, wchar_t const *src, size_t max);
+typedef int (*api_wcswidth_t)(wchar_t const *wcs, size_t n);
+typedef int (*api_wcwidth_t)(wchar_t wc);
 
 typedef void *(*api_malloc_t)(size_t);
 typedef void *(*api_calloc_t)(size_t, size_t);
@@ -344,6 +354,10 @@ typedef struct real_apis {
     api_strerror_s_t strerror_s;
     api_memmem_t memmem;
     api_memrchr_t memrchr;
+
+    api_wcstombs_t wcstombs;
+    api_wcswidth_t wcswidth;
+    api_wcwidth_t wcwidth;
 
     api_malloc_t malloc;
     api_calloc_t calloc;
@@ -779,6 +793,20 @@ libsee_export void *memrchr(void const *s, int c, size_t n) { libsee_return(memr
 
 #pragma endregion
 
+#pragma region Wide Characters // Contents of `wchar.h`
+
+#include <wchar.h>
+
+libsee_export size_t wcstombs(char *dst, wchar_t const *src, size_t len) {
+    libsee_return(wcstombs, size_t, dst, src, len);
+}
+
+libsee_export int wcwidth(wchar_t c) { libsee_return(wcwidth, int, c); }
+
+libsee_export int wcswidth(wchar_t const *s, size_t n) { libsee_return(wcswidth, int, s, n); }
+
+#pragma endregion
+
 #pragma region Numerics // Contents of `stdlib.h`
 
 libsee_export void srand(unsigned seed) { libsee_noreturn(srand, seed); }
@@ -1185,6 +1213,10 @@ void libsee_initialize(void) {
     apis->memmem = (api_memmem_t)dlsym(RTLD_NEXT, "memmem");
     apis->memrchr = (api_memrchr_t)dlsym(RTLD_NEXT, "memrchr");
 
+    apis->wcstombs = (api_wcstombs_t)dlsym(RTLD_NEXT, "wcstombs");
+    apis->wcswidth = (api_wcswidth_t)dlsym(RTLD_NEXT, "wcswidth");
+    apis->wcwidth = (api_wcwidth_t)dlsym(RTLD_NEXT, "wcwidth");
+
     apis->malloc = (api_malloc_t)dlsym(RTLD_NEXT, "malloc");
     apis->calloc = (api_calloc_t)dlsym(RTLD_NEXT, "calloc");
     apis->realloc = (api_realloc_t)dlsym(RTLD_NEXT, "realloc");
@@ -1359,6 +1391,8 @@ void libsee_finalize(void) {
         {"strspn"}, {"strcspn"}, {"strpbrk"}, {"strstr"}, {"strtok"}, {"strtok_s"}, {"memchr"}, {"memcmp"}, {"memset"},
         {"memset_s"}, {"memcpy"}, {"memcpy_s"}, {"memmove"}, {"memmove_s"}, {"strerror"}, {"strerror_s"}, {"memmem"},
         {"memrchr"},
+        // Wide strings
+        {"wcstombs"}, {"mbstowcs"}, {"mbrtowc"},
         // Heap
         {"malloc"}, {"calloc"}, {"realloc"}, {"free"}, {"aligned_alloc"},
         // Algorithms
