@@ -14,7 +14,7 @@ To compile the library, run:
 ```bash
 cmake -B build_release
 cmake --build build_release --config Release
-test -e build_release/libsee.so && echo "Success" || echo "Failure"
+test -e build_release/libsee.* && echo "Success" || echo "Failure"
 ```
 
 Want to try it out? Here's how to use it:
