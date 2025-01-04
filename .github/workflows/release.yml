@@ -18,17 +18,31 @@ permissions:
 
 jobs:
   versioning:
-    name: Semantic Release
-    runs-on: ubuntu-22.04
+    name: Update Version
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Run TinySemVer
+        uses: ashvardanian/tinysemver@v2.1.1
         with:
-          node-version: 20
-      - run: npm install --ignore-scripts --save-dev --prefix ./package-ci @semantic-release/exec @semantic-release/git conventional-changelog-eslint semantic-release && npx --prefix ./package-ci semantic-release
+          verbose: "true"
+          version-file: "VERSION"
+          update-version-in: |
+            CMakeLists.txt:VERSION (\d+\.\d+\.\d+)
+          update-major-version-in: |
+            libsee.c:^#define LIBSEE_VERSION_MAJOR (\d+)
+          update-minor-version-in: |
+            libsee.c:^#define LIBSEE_VERSION_MINOR (\d+)
+          update-patch-version-in: |
+            libsee.c:^#define LIBSEE_VERSION_PATCH (\d+)
+          dry-run: "false"
+          push: "true"
+          create-release: "true"
+          github-token: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
 
   rebase:
     name: Rebase Dev. Branch
