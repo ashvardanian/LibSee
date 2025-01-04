@@ -1,9 +1,10 @@
-# LibSee
+![LibSee Thumbnail](https://github.com/ashvardanian/ashvardanian/blob/master/repositories/LibSee.jpg?raw=true)
 
 > _See where you use LibC the most._ <br/>
 > _Trace calls failing tests. Then - roast!_
 
-One-liner, to download and compile the script and run your favorite query:
+__LibSee__ is a single-file library for profiling LibC calls and 🔜 fuzzy testing.
+To download and compile the script and run your favorite query:
 
 ```bash
 gcc -g -O2 -fno-builtin -fPIC -nostdlib -nostartfiles -shared -o libsee.so libsee.c
