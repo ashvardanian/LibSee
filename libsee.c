@@ -480,25 +480,27 @@ void syscall_print(char const *buf, size_t count) {
     // The system call number is passed in x8, and the arguments are in x0, x1, and x2.
     long syscall_write = (long)64; // System call number for write in AArch64 Linux
     long file_descriptor = (long)1;
-    asm volatile("mov x0, %1\n" // First argument: file descriptor
-                 "mov x1, %2\n" // Second argument: buffer address
-                 "mov x2, %3\n" // Third argument: buffer size
-                 "mov x8, %4\n" // System call number: SYS_write (64)
-                 "svc #0\n"     // Make the system call
-                 "mov %0, x0"   // Store the return value
-                 : "=r"(ret)
-                 : "r"(file_descriptor), "r"(buf), "r"((long)count), "r"(syscall_write)
-                 : "x0", "x1", "x2", "x8", "memory");
+    asm volatile(      //
+        "mov x0, %1\n" // First argument: file descriptor
+        "mov x1, %2\n" // Second argument: buffer address
+        "mov x2, %3\n" // Third argument: buffer size
+        "mov x8, %4\n" // System call number: SYS_write (64)
+        "svc #0\n"     // Make the system call
+        "mov %0, x0"   // Store the return value
+        : "=r"(ret)
+        : "r"(file_descriptor), "r"(buf), "r"((long)count), "r"(syscall_write)
+        : "x0", "x1", "x2", "x8", "memory");
 #elif defined(__x86_64__) || defined(__i386__)
     // Inline assembly syntax for making a system call in x86-64 Linux.
     // Uses the syscall instruction, passing the system call number in rax,
     // and the call arguments in rdi, rsi, and rdx, respectively.
     long syscall_write = (long)1; // System call number for write in x86-64 Linux
     unsigned int file_descriptor = (unsigned int)1;
-    asm volatile("syscall"
-                 : "=a"(ret)
-                 : "a"(syscall_write), "D"(file_descriptor), "S"(buf), "d"(count)
-                 : "rcx", "r11", "memory");
+    asm volatile( //
+        "syscall"
+        : "=a"(ret)
+        : "a"(syscall_write), "D"(file_descriptor), "S"(buf), "d"(count)
+        : "rcx", "r11", "memory");
     (void)ret;
 #endif
     (void)buf;
@@ -539,18 +541,20 @@ void reopen_stdout(void) {
 void close_stdout(void) {
     long ret;
 #ifdef __aarch64__
-    asm volatile("mov x0, 1\n"  // File descriptor for stdout
-                 "mov x8, 57\n" // Syscall number for 'close' in AArch64
-                 "svc #0\n"
-                 "mov %0, x0"
-                 : "=r"(ret)
-                 : // No inputs besides the syscall number and FD
-                 : "x0", "x8", "memory");
+    asm volatile(      //
+        "mov x0, 1\n"  // File descriptor for stdout
+        "mov x8, 57\n" // Syscall number for 'close' in AArch64
+        "svc #0\n"
+        "mov %0, x0"
+        : "=r"(ret)
+        : // No inputs besides the syscall number and FD
+        : "x0", "x8", "memory");
 #elif defined(__x86_64__)
-    asm volatile("syscall"
-                 : "=a"(ret)
-                 : "a"(3), "D"(1) // Inputs: syscall number for 'close', FD for stdout
-                 : "rcx", "r11", "memory");
+    asm volatile( //
+        "syscall"
+        : "=a"(ret)
+        : "a"(3), "D"(1) // Inputs: syscall number for 'close', FD for stdout
+        : "rcx", "r11", "memory");
 #endif
     (void)ret;
 }

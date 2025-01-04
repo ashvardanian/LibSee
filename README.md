@@ -3,18 +3,18 @@
 > _See where you use LibC the most._ <br/>
 > _Trace calls failing tests. Then - roast!_
 
-One-liner, to download and compile the script and run your vavorite query:
+One-liner, to download and compile the script and run your favorite query:
 
 ```bash
 gcc -g -O2 -fno-builtin -fPIC -nostdlib -nostartfiles -shared -o libsee.so libsee.c
 ```
 
-LibSee overrides LibC symbols using `LD_PRELOAD`, profiling the most commonly used functions, and, optionally, fuzzing their behaviour for testing.
+LibSee overrides LibC symbols using `LD_PRELOAD`, profiling the most commonly used functions, and, optionally, fuzzing their behavior for testing.
 The library yields a few binaries when compiled:
 
 ```bash
 libsee.so # Profiles LibC calls
-libsee_and_knee.so # Correct LibC behaviour, but fuzzed!
+libsee_and_knee.so # Correct LibC behavior, but fuzzed!
 ```
 
 ## Tricks Used
@@ -39,11 +39,11 @@ Feel free to suggest PRs covering the rest:
 - [x] [algorithms](https://en.cppreference.com/w/c/algorithm)
 - [x] [date and time](https://en.cppreference.com/w/c/chrono)
 - [x] [input/output](https://en.cppreference.com/w/c/io)
+- [x] [wide-character strings](https://en.cppreference.com/w/c/string/wide)
 - [ ] [concurrency and atomics](https://en.cppreference.com/w/c/thread)
 - [ ] retrieving error numbers
 - [ ] [numerics](https://en.cppreference.com/w/c/numeric)
-- [ ] [wide-character strings](https://en.cppreference.com/w/c/string/wide)
-- [ ] [multibyte strings](https://en.cppreference.com/w/c/string/multibyte)
+- [ ] [multi-byte strings](https://en.cppreference.com/w/c/string/multibyte)
 - [ ] [wide-character IO](https://en.cppreference.com/w/c/io)
 - [ ] [localization](https://en.cppreference.com/w/c/locale)
 - [ ] anything newer than C 11

@@ -3,5 +3,17 @@
         "string.h": "c",
         "cstdio": "c",
         "wchar.h": "c"
-    }
+    },
+    "cSpell.words": [
+        "BLAS",
+        "dlsym",
+        "dlvsym",
+        "hsearch",
+        "LAPACK",
+        "libsee",
+        "memcpy",
+        "memset",
+        "PCRE",
+        "tsearch"
+    ]
 }
