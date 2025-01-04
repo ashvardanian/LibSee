@@ -69,6 +69,8 @@ typedef int errno_t;
 typedef size_t rsize_t;
 #endif
 
+#define LIBSEE_MAX_SYMBOLS 97
+
 /**
  *  @brief  Contains the number of times each function was called.
  *
@@ -112,6 +114,10 @@ typedef union thread_local_counters {
         size_t strerror_s;
         size_t memmem;
         size_t memrchr;
+
+        size_t wcstombs;
+        size_t wcswidth;
+        size_t wcwidth;
 
         size_t malloc;
         size_t calloc;
@@ -179,7 +185,7 @@ typedef union thread_local_counters {
         size_t mktime;
     } named;
 
-    size_t indexed[94];
+    size_t indexed[LIBSEE_MAX_SYMBOLS];
 } thread_local_counters;
 
 #pragma region Function Pointers
@@ -218,6 +224,10 @@ typedef char *(*api_strerror_t)(int errnum);
 typedef errno_t (*api_strerror_s_t)(char *buf, rsize_t bufsz, errno_t errnum);
 typedef void *(*api_memmem_t)(void const *haystack, size_t haystacklen, void const *needle, size_t needlelen);
 typedef void *(*api_memrchr_t)(void const *s, int c, size_t n);
+
+typedef size_t (*api_wcstombs_t)(char *dest, wchar_t const *src, size_t max);
+typedef int (*api_wcswidth_t)(wchar_t const *wcs, size_t n);
+typedef int (*api_wcwidth_t)(wchar_t wc);
 
 typedef void *(*api_malloc_t)(size_t);
 typedef void *(*api_calloc_t)(size_t, size_t);
@@ -345,6 +355,10 @@ typedef struct real_apis {
     api_memmem_t memmem;
     api_memrchr_t memrchr;
 
+    api_wcstombs_t wcstombs;
+    api_wcswidth_t wcswidth;
+    api_wcwidth_t wcwidth;
+
     api_malloc_t malloc;
     api_calloc_t calloc;
     api_realloc_t realloc;
@@ -466,25 +480,27 @@ void syscall_print(char const *buf, size_t count) {
     // The system call number is passed in x8, and the arguments are in x0, x1, and x2.
     long syscall_write = (long)64; // System call number for write in AArch64 Linux
     long file_descriptor = (long)1;
-    asm volatile("mov x0, %1\n" // First argument: file descriptor
-                 "mov x1, %2\n" // Second argument: buffer address
-                 "mov x2, %3\n" // Third argument: buffer size
-                 "mov x8, %4\n" // System call number: SYS_write (64)
-                 "svc #0\n"     // Make the system call
-                 "mov %0, x0"   // Store the return value
-                 : "=r"(ret)
-                 : "r"(file_descriptor), "r"(buf), "r"((long)count), "r"(syscall_write)
-                 : "x0", "x1", "x2", "x8", "memory");
+    asm volatile(      //
+        "mov x0, %1\n" // First argument: file descriptor
+        "mov x1, %2\n" // Second argument: buffer address
+        "mov x2, %3\n" // Third argument: buffer size
+        "mov x8, %4\n" // System call number: SYS_write (64)
+        "svc #0\n"     // Make the system call
+        "mov %0, x0"   // Store the return value
+        : "=r"(ret)
+        : "r"(file_descriptor), "r"(buf), "r"((long)count), "r"(syscall_write)
+        : "x0", "x1", "x2", "x8", "memory");
 #elif defined(__x86_64__) || defined(__i386__)
     // Inline assembly syntax for making a system call in x86-64 Linux.
     // Uses the syscall instruction, passing the system call number in rax,
     // and the call arguments in rdi, rsi, and rdx, respectively.
     long syscall_write = (long)1; // System call number for write in x86-64 Linux
     unsigned int file_descriptor = (unsigned int)1;
-    asm volatile("syscall"
-                 : "=a"(ret)
-                 : "a"(syscall_write), "D"(file_descriptor), "S"(buf), "d"(count)
-                 : "rcx", "r11", "memory");
+    asm volatile( //
+        "syscall"
+        : "=a"(ret)
+        : "a"(syscall_write), "D"(file_descriptor), "S"(buf), "d"(count)
+        : "rcx", "r11", "memory");
     (void)ret;
 #endif
     (void)buf;
@@ -525,18 +541,20 @@ void reopen_stdout(void) {
 void close_stdout(void) {
     long ret;
 #ifdef __aarch64__
-    asm volatile("mov x0, 1\n"  // File descriptor for stdout
-                 "mov x8, 57\n" // Syscall number for 'close' in AArch64
-                 "svc #0\n"
-                 "mov %0, x0"
-                 : "=r"(ret)
-                 : // No inputs besides the syscall number and FD
-                 : "x0", "x8", "memory");
+    asm volatile(      //
+        "mov x0, 1\n"  // File descriptor for stdout
+        "mov x8, 57\n" // Syscall number for 'close' in AArch64
+        "svc #0\n"
+        "mov %0, x0"
+        : "=r"(ret)
+        : // No inputs besides the syscall number and FD
+        : "x0", "x8", "memory");
 #elif defined(__x86_64__)
-    asm volatile("syscall"
-                 : "=a"(ret)
-                 : "a"(3), "D"(1) // Inputs: syscall number for 'close', FD for stdout
-                 : "rcx", "r11", "memory");
+    asm volatile( //
+        "syscall"
+        : "=a"(ret)
+        : "a"(3), "D"(1) // Inputs: syscall number for 'close', FD for stdout
+        : "rcx", "r11", "memory");
 #endif
     (void)ret;
 }
@@ -776,6 +794,20 @@ libsee_export void *memmem(void const *haystack, size_t haystacklen, void const 
     libsee_return(memmem, void *, haystack, haystacklen, needle, needlelen);
 }
 libsee_export void *memrchr(void const *s, int c, size_t n) { libsee_return(memrchr, void *, s, c, n); }
+
+#pragma endregion
+
+#pragma region Wide Characters // Contents of `wchar.h`
+
+#include <wchar.h>
+
+libsee_export size_t wcstombs(char *dst, wchar_t const *src, size_t len) {
+    libsee_return(wcstombs, size_t, dst, src, len);
+}
+
+libsee_export int wcwidth(wchar_t c) { libsee_return(wcwidth, int, c); }
+
+libsee_export int wcswidth(wchar_t const *s, size_t n) { libsee_return(wcswidth, int, s, n); }
 
 #pragma endregion
 
@@ -1150,11 +1182,12 @@ typedef struct libsee_name_stats {
 
 void libsee_initialize(void) {
 
-    // Initialize all the counters to zeros, without using `memset`
-    size_t *counters = libsee_thread_cycles[0].indexed;
+    // Initialize all the cycles to zeros, without using `memset`
+    size_t *cycles = libsee_thread_cycles[0].indexed;
+    size_t *calls = libsee_thread_calls[0].indexed;
     size_t total_counters_per_thread = sizeof(thread_local_counters) / sizeof(size_t);
     size_t total_counters_across_threads = LIBSEE_MAX_THREADS * total_counters_per_thread;
-    for (size_t i = 0; i < total_counters_across_threads; i++) { counters[i] = 0; }
+    for (size_t i = 0; i < total_counters_across_threads; i++) cycles[i] = calls[i] = 0;
 
     // Load the symbols from the underlying implementation
     real_apis *apis = &libsee_apis;
@@ -1183,6 +1216,10 @@ void libsee_initialize(void) {
     apis->strerror = (api_strerror_t)dlsym(RTLD_NEXT, "strerror");
     apis->memmem = (api_memmem_t)dlsym(RTLD_NEXT, "memmem");
     apis->memrchr = (api_memrchr_t)dlsym(RTLD_NEXT, "memrchr");
+
+    apis->wcstombs = (api_wcstombs_t)dlsym(RTLD_NEXT, "wcstombs");
+    apis->wcswidth = (api_wcswidth_t)dlsym(RTLD_NEXT, "wcswidth");
+    apis->wcwidth = (api_wcwidth_t)dlsym(RTLD_NEXT, "wcwidth");
 
     apis->malloc = (api_malloc_t)dlsym(RTLD_NEXT, "malloc");
     apis->calloc = (api_calloc_t)dlsym(RTLD_NEXT, "calloc");
@@ -1358,6 +1395,8 @@ void libsee_finalize(void) {
         {"strspn"}, {"strcspn"}, {"strpbrk"}, {"strstr"}, {"strtok"}, {"strtok_s"}, {"memchr"}, {"memcmp"}, {"memset"},
         {"memset_s"}, {"memcpy"}, {"memcpy_s"}, {"memmove"}, {"memmove_s"}, {"strerror"}, {"strerror_s"}, {"memmem"},
         {"memrchr"},
+        // Wide strings
+        {"wcstombs"}, {"mbstowcs"}, {"mbrtowc"},
         // Heap
         {"malloc"}, {"calloc"}, {"realloc"}, {"free"}, {"aligned_alloc"},
         // Algorithms
