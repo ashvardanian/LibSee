@@ -1,14 +1,11 @@
 name: "Pre-Release"
 
 on:
-  push:
-    branches: ["main-dev"]
   pull_request:
-    branches: ["main-dev"]
+    branches: ["main", "main-dev"]
 
 env:
   BUILD_TYPE: Release
-  GH_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
   PYTHON_VERSION: 3.11
   SWIFT_VERSION: 5.9
   PYTHONUTF8: 1
@@ -18,38 +15,14 @@ permissions:
   contents: read
 
 jobs:
-  versioning:
-    name: Update Version
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Run TinySemVer
-        uses: ashvardanian/tinysemver@v2.1.1
-        with:
-          verbose: "true"
-          version-file: "VERSION"
-          update-version-in: |
-            CMakeLists.txt:VERSION (\d+\.\d+\.\d+)
-          update-major-version-in: |
-            libsee.c:^#define LIBSEE_VERSION_MAJOR (\d+)
-          update-minor-version-in: |
-            libsee.c:^#define LIBSEE_VERSION_MINOR (\d+)
-          update-patch-version-in: |
-            libsee.c:^#define LIBSEE_VERSION_PATCH (\d+)
-          dry-run: "true"
-
   test_ubuntu_gcc:
     name: Ubuntu (GCC)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     env:
       CC: gcc
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           sudo apt update
@@ -65,12 +38,12 @@ jobs:
 
   test_ubuntu_clang:
     name: Ubuntu (Clang)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     env:
       CC: clang
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           sudo apt update
@@ -86,7 +59,7 @@ jobs:
 
   test_ubuntu_cross_compilation:
     name: Cross Compilation
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     env:
       CC: clang
       AR: llvm-ar
@@ -103,7 +76,7 @@ jobs:
             target: aarch64-linux-gnu
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           sudo apt-get update
